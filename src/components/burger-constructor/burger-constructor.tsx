@@ -1,24 +1,65 @@
 import { BurgerConstructorUI } from '@ui';
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from '../../services/store';
 
-import type { TConstructorIngredient, TConstructorState, TOrder } from '@utils-types';
+import {
+  clearOrder,
+  createOrderPending,
+  createOrderSuccess,
+  createOrderFailed,
+} from '../../services/orderSlice';
+
+import type { TConstructorIngredient } from '@utils-types';
+
+import { orderBurgerApi } from '../../utils/burger-api';
+import { clearConstructor } from '../../services/constructorSlice';
 
 export const BurgerConstructor = (): React.JSX.Element | null => {
-  /** TODO: Взять переменные constructorItems, orderRequest и orderModalData из стора */
-  const constructorItems: TConstructorState = {
-    bun: null,
-    ingredients: [],
-  };
-  const orderRequest = false;
-  const orderModalData: TOrder | null = null;
+  const constructorItems = useSelector((state) => state.burgerConstructor);
+
+  const orderRequest = useSelector((state) => state.order.orderRequest);
+
+  const orderError = useSelector((state) => state.order.error);
+
+  const orderModalData = useSelector((state) => state.order.orderModalData);
+
+  const dispatch = useDispatch();
+  const user = useSelector((state) => state.user.user);
+  const navigate = useNavigate();
 
   const onOrderClick = (): void => {
     if (!constructorItems.bun || orderRequest) return;
-    // TODO: Оформить заказ
+
+    if (!user) {
+      navigate('/login', {
+        state: { from: '/' },
+      });
+      return;
+    }
+
+    const ingredientIds = [
+      constructorItems.bun._id,
+      ...constructorItems.ingredients.map((ingredient) => ingredient._id),
+      constructorItems.bun._id,
+    ];
+
+    dispatch(createOrderPending());
+
+    orderBurgerApi(ingredientIds)
+      .then((response) => {
+        dispatch(createOrderSuccess(response.order));
+        dispatch(clearConstructor());
+      })
+      .catch((error) => {
+        dispatch(createOrderFailed(error.message ?? 'Ошибка оформления заказа'));
+      });
   };
 
   const closeOrderModal = (): void => {
-    // TODO: Закрыть модальное окно и сбросить заказ
+    if (orderRequest) return;
+
+    dispatch(clearOrder());
   };
 
   const price = useMemo(
@@ -35,6 +76,7 @@ export const BurgerConstructor = (): React.JSX.Element | null => {
     <BurgerConstructorUI
       price={price}
       orderRequest={orderRequest}
+      error={orderError}
       constructorItems={constructorItems}
       orderModalData={orderModalData}
       onOrderClick={onOrderClick}

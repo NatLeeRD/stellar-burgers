@@ -1,23 +1,56 @@
 import { Preloader, OrderInfoUI } from '@ui';
-import { useMemo } from 'react';
-
-import type { TIngredient } from '@utils-types';
+import { useEffect, useMemo, useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { useSelector } from '../../services/store';
+import { getOrderByNumberApi } from '../../utils/burger-api';
+import type { TOrder, TIngredient } from '../../utils/types';
 
 export const OrderInfo = (): React.JSX.Element => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0,
-  };
+  const { number } = useParams<{ number: string }>();
+  const [fetchedOrder, setFetchedOrder] = useState<TOrder | null>(null);
+  const [isOrderLoading, setIsOrderLoading] = useState(false);
+  const orders = useSelector((state) => state.feed.orders);
+  const ingredients = useSelector((state) => state.ingredients.ingredients);
+  const orderNumber = Number(number);
+  const orderData =
+    orders.find((order) => order.number === orderNumber) ??
+    (fetchedOrder?.number === orderNumber ? fetchedOrder : null);
 
-  const ingredients: TIngredient[] = [];
+  useEffect(() => {
+    if (!number || !Number.isInteger(orderNumber) || orderNumber <= 0) {
+      return;
+    }
 
-  /* Готовим данные для отображения */
+    if (orders.some((order) => order.number === orderNumber)) {
+      return;
+    }
+
+    let cancelled = false;
+
+    setIsOrderLoading(true);
+
+    getOrderByNumberApi(orderNumber)
+      .then((data) => {
+        if (!cancelled) {
+          setFetchedOrder(data.orders[0] ?? null);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          console.error('Ошибка загрузки заказа:', error);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setIsOrderLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [number, orderNumber, orders]);
+
   const orderInfo = useMemo(() => {
     if (!orderData || !ingredients.length) return null;
 
@@ -29,6 +62,7 @@ export const OrderInfo = (): React.JSX.Element => {
       (acc: TIngredientsWithCount, item) => {
         if (!acc[item]) {
           const ingredient = ingredients.find((ing) => ing._id === item);
+
           if (ingredient) {
             acc[item] = {
               ...ingredient,
@@ -57,8 +91,12 @@ export const OrderInfo = (): React.JSX.Element => {
     };
   }, [orderData, ingredients]);
 
-  if (!orderInfo) {
+  if (isOrderLoading) {
     return <Preloader />;
+  }
+
+  if (!orderInfo) {
+    return <p className="text text_type_main-medium">Заказ не найден</p>;
   }
 
   return <OrderInfoUI orderInfo={orderInfo} />;

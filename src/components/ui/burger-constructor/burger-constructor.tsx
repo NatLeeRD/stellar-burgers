@@ -5,15 +5,14 @@ import {
   CurrencyIcon,
 } from '@krgaa/react-developer-burger-ui-components';
 import { Preloader, OrderDetailsUI } from '@ui';
-
 import type { BurgerConstructorUIProps } from './type';
 import type { TConstructorIngredient } from '@utils-types';
-
 import styles from './burger-constructor.module.css';
 
 export const BurgerConstructorUI = ({
   constructorItems,
   orderRequest,
+  error,
   price,
   orderModalData,
   onOrderClick,
@@ -81,6 +80,12 @@ export const BurgerConstructorUI = ({
         Оформить заказ
       </Button>
     </div>
+
+    {error && (
+      <p className="text text_type_main-default text_color_inactive mt-4">
+        Не удалось оформить заказ: {error}
+      </p>
+    )}
 
     {orderRequest && (
       <Modal onClose={closeOrderModal} title={'Оформляем заказ...'}>
