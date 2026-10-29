@@ -1,30 +1,29 @@
 import { ProfileUI } from '@ui-pages';
 import { type SyntheticEvent, useEffect, useState } from 'react';
+
 import { useDispatch, useSelector } from '../../services/store';
-import { setUser } from '../../services/userSlice';
-import { updateUserApi } from '../../utils/burger-api';
+import { updateUser } from '../../services/userSlice';
 
 export const Profile = (): React.JSX.Element => {
   const user = useSelector((state) => state.user.user);
   const dispatch = useDispatch();
-
   const [formValue, setFormValue] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
+    name: user?.name ?? '',
+    email: user?.email ?? '',
     password: '',
   });
 
   useEffect(() => {
     setFormValue((prevState) => ({
       ...prevState,
-      name: user?.name || '',
-      email: user?.email || '',
+      name: user?.name ?? '',
+      email: user?.email ?? '',
     }));
   }, [user]);
 
   const isFormChanged =
-    formValue.name !== (user?.name || '') ||
-    formValue.email !== (user?.email || '') ||
+    formValue.name !== (user?.name ?? '') ||
+    formValue.email !== (user?.email ?? '') ||
     !!formValue.password;
 
   const handleSubmit = (e: SyntheticEvent): void => {
@@ -40,13 +39,12 @@ export const Profile = (): React.JSX.Element => {
       ...(formValue.password ? { password: formValue.password } : {}),
     };
 
-    updateUserApi(updatedData)
-      .then((response) => {
-        dispatch(setUser(response.user));
-
+    dispatch(updateUser(updatedData))
+      .unwrap()
+      .then((updatedUser) => {
         setFormValue({
-          name: response.user.name,
-          email: response.user.email,
+          name: updatedUser.name,
+          email: updatedUser.email,
           password: '',
         });
       })
@@ -59,8 +57,8 @@ export const Profile = (): React.JSX.Element => {
     e.preventDefault();
 
     setFormValue({
-      name: user?.name || '',
-      email: user?.email || '',
+      name: user?.name ?? '',
+      email: user?.email ?? '',
       password: '',
     });
   };

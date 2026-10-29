@@ -1,9 +1,8 @@
 import { ProfileMenuUI } from '@ui';
 import { useLocation, useNavigate } from 'react-router-dom';
+
 import { useDispatch } from '../../services/store';
-import { clearUser } from '../../services/userSlice';
-import { logoutApi } from '../../utils/burger-api';
-import { deleteCookie } from '../../utils/cookie';
+import { logoutUser } from '../../services/userSlice';
 
 export const ProfileMenu = (): React.JSX.Element => {
   const { pathname } = useLocation();
@@ -11,13 +10,10 @@ export const ProfileMenu = (): React.JSX.Element => {
   const navigate = useNavigate();
 
   const handleLogout = (): void => {
-    logoutApi()
+    dispatch(logoutUser())
+      .unwrap()
       .then(() => {
-        deleteCookie('accessToken');
-        localStorage.removeItem('refreshToken');
-
-        dispatch(clearUser());
-        navigate('/login', { replace: true });
+        void navigate('/login', { replace: true });
       })
       .catch((error) => {
         console.error('Ошибка выхода из аккаунта:', error);

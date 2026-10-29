@@ -5,7 +5,9 @@ import {
   Logo,
 } from '@krgaa/react-developer-burger-ui-components';
 import { NavLink } from 'react-router-dom';
+
 import type { TAppHeaderUIProps } from './type';
+
 import styles from './app-header.module.css';
 
 export const AppHeaderUI = ({ userName }: TAppHeaderUIProps): React.JSX.Element => (

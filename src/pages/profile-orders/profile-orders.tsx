@@ -1,5 +1,6 @@
 import { ProfileOrdersUI } from '@ui-pages';
 import { useEffect } from 'react';
+
 import { useDispatch, useSelector } from '../../services/store';
 import { fetchUserOrders } from '../../services/userSlice';
 
@@ -10,13 +11,13 @@ export const ProfileOrders = (): React.JSX.Element => {
   const error = useSelector((state) => state.user.ordersError);
 
   useEffect(() => {
-    dispatch(fetchUserOrders());
+    void dispatch(fetchUserOrders());
 
     const intervalId = setInterval(() => {
-      dispatch(fetchUserOrders());
+      void dispatch(fetchUserOrders());
     }, 5000);
 
-    return () => {
+    return (): void => {
       clearInterval(intervalId);
     };
   }, [dispatch]);

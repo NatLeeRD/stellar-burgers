@@ -1,8 +1,9 @@
 import { Preloader } from '@ui';
 import { FeedUI } from '@ui-pages';
 import { useEffect } from 'react';
-import { useDispatch, useSelector } from '../../services/store';
+
 import { fetchFeed } from '../../services/feedSlice';
+import { useDispatch, useSelector } from '../../services/store';
 
 export const Feed = (): React.JSX.Element => {
   const dispatch = useDispatch();
@@ -12,17 +13,19 @@ export const Feed = (): React.JSX.Element => {
   const isLoading = useSelector((state) => state.feed.isLoading);
 
   const handleGetFeeds = (): void => {
-    dispatch(fetchFeed());
+    void dispatch(fetchFeed());
   };
 
   useEffect(() => {
-    dispatch(fetchFeed());
+    void dispatch(fetchFeed());
 
     const intervalId = setInterval(() => {
-      dispatch(fetchFeed());
+      void dispatch(fetchFeed());
     }, 5000);
 
-    return () => clearInterval(intervalId);
+    return (): void => {
+      clearInterval(intervalId);
+    };
   }, [dispatch]);
 
   if (isLoading && orders.length === 0) {

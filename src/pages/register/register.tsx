@@ -1,28 +1,35 @@
 import { RegisterUI } from '@ui-pages';
 import { type SyntheticEvent, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { registerUserApi } from '../../utils/burger-api';
+
+import { useDispatch } from '../../services/store';
+import { registerUser } from '../../services/userSlice';
 
 export const Register = (): React.JSX.Element => {
   const [userName, setUserName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorText, setErrorText] = useState('');
-  const navigate = useNavigate();
+
+  const dispatch = useDispatch();
+
   const handleSubmit = (e: SyntheticEvent): void => {
     e.preventDefault();
     setErrorText('');
 
-    registerUserApi({
-      name: userName,
-      email,
-      password,
-    })
-      .then(() => {
-        navigate('/login');
+    dispatch(
+      registerUser({
+        name: userName,
+        email,
+        password,
       })
-      .catch((error) => {
-        setErrorText(error.message ?? 'Ошибка регистрации');
+    )
+      .unwrap()
+      .catch((error: unknown) => {
+        if (error instanceof Error) {
+          setErrorText(error.message);
+        } else {
+          setErrorText('Ошибка регистрации');
+        }
       });
   };
 

@@ -1,19 +1,12 @@
 import { BurgerConstructorUI } from '@ui';
 import { useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+
+import { clearConstructor } from '../../services/constructorSlice';
+import { clearOrder, createOrder } from '../../services/orderSlice';
 import { useDispatch, useSelector } from '../../services/store';
 
-import {
-  clearOrder,
-  createOrderPending,
-  createOrderSuccess,
-  createOrderFailed,
-} from '../../services/orderSlice';
-
 import type { TConstructorIngredient } from '@utils-types';
-
-import { orderBurgerApi } from '../../utils/burger-api';
-import { clearConstructor } from '../../services/constructorSlice';
 
 export const BurgerConstructor = (): React.JSX.Element | null => {
   const constructorItems = useSelector((state) => state.burgerConstructor);
@@ -27,13 +20,14 @@ export const BurgerConstructor = (): React.JSX.Element | null => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user.user);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const onOrderClick = (): void => {
     if (!constructorItems.bun || orderRequest) return;
 
     if (!user) {
-      navigate('/login', {
-        state: { from: '/' },
+      void navigate('/login', {
+        state: { from: location },
       });
       return;
     }
@@ -44,18 +38,15 @@ export const BurgerConstructor = (): React.JSX.Element | null => {
       constructorItems.bun._id,
     ];
 
-    dispatch(createOrderPending());
-
-    orderBurgerApi(ingredientIds)
-      .then((response) => {
-        dispatch(createOrderSuccess(response.order));
+    void dispatch(createOrder(ingredientIds))
+      .unwrap()
+      .then(() => {
         dispatch(clearConstructor());
       })
-      .catch((error) => {
-        dispatch(createOrderFailed(error.message ?? 'Ошибка оформления заказа'));
+      .catch((error: unknown) => {
+        console.error('Ошибка оформления заказа:', error);
       });
   };
-
   const closeOrderModal = (): void => {
     if (orderRequest) return;
 
