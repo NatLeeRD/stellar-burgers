@@ -1,23 +1,41 @@
 import { Preloader, OrderInfoUI } from '@ui';
-import { useMemo } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useParams } from 'react-router-dom';
 
-import type { TIngredient } from '@utils-types';
+import { fetchOrderByNumber } from '../../services/orderSlice';
+import { useDispatch, useSelector } from '../../services/store';
+
+import type { TIngredient } from '../../utils/types';
 
 export const OrderInfo = (): React.JSX.Element => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0,
-  };
+  const { number } = useParams<{ number: string }>();
+  const dispatch = useDispatch();
 
-  const ingredients: TIngredient[] = [];
+  const orders = useSelector((state) => state.feed.orders);
+  const userOrders = useSelector((state) => state.user.orders);
+  const ingredients = useSelector((state) => state.ingredients.ingredients);
 
-  /* Готовим данные для отображения */
+  const fetchedOrder = useSelector((state) => state.order.fetchedOrder);
+  const isOrderLoading = useSelector((state) => state.order.fetchedOrderLoading);
+  const orderError = useSelector((state) => state.order.fetchedOrderError);
+
+  const orderNumber = Number(number);
+  const isValidOrderNumber =
+    !!number && Number.isInteger(orderNumber) && orderNumber > 0;
+
+  const orderData =
+    orders.find((order) => order.number === orderNumber) ??
+    userOrders.find((order) => order.number === orderNumber) ??
+    (fetchedOrder?.number === orderNumber ? fetchedOrder : null);
+
+  useEffect(() => {
+    if (!isValidOrderNumber || orderData || isOrderLoading || orderError) {
+      return;
+    }
+
+    void dispatch(fetchOrderByNumber(orderNumber));
+  }, [dispatch, isValidOrderNumber, orderNumber, orderData, isOrderLoading, orderError]);
+
   const orderInfo = useMemo(() => {
     if (!orderData || !ingredients.length) return null;
 
@@ -29,6 +47,7 @@ export const OrderInfo = (): React.JSX.Element => {
       (acc: TIngredientsWithCount, item) => {
         if (!acc[item]) {
           const ingredient = ingredients.find((ing) => ing._id === item);
+
           if (ingredient) {
             acc[item] = {
               ...ingredient,
@@ -57,8 +76,14 @@ export const OrderInfo = (): React.JSX.Element => {
     };
   }, [orderData, ingredients]);
 
-  if (!orderInfo) {
+  if (isOrderLoading && !orderData) {
     return <Preloader />;
+  }
+
+  if (!orderInfo) {
+    return (
+      <p className="text text_type_main-medium">{orderError ?? 'Заказ не найден'}</p>
+    );
   }
 
   return <OrderInfoUI orderInfo={orderInfo} />;
